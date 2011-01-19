@@ -106,15 +106,15 @@ class LessCss extends AbstractMinimizer implements CssMinimizer
 
 	/**
 	 * (non-PHPdoc)
-	 * @see Minimizer::minimizeFile($strSource)
+	 * @see Minimizer::minimizeFromFile($strFile)
 	 */
-	public function minimizeFile($strSource)
+	public function minimizeFromFile($strFile)
 	{
 		// create temporary output file
 		$strTemp = $this->createTempFile();
 		$objFile = new File($strTemp);
 		// minimize
-		if (!$this->minimize($strSource, $strTemp))
+		if (!$this->minimize($strFile, $strTemp))
 		{
 			$objFile->delete();
 			return false;
@@ -126,6 +126,26 @@ class LessCss extends AbstractMinimizer implements CssMinimizer
 		$objFile->delete();
 		// return code
 		return $strCode;
+	}
+	
+	
+	/**
+	 * (non-PHPdoc)
+	 * @see Minimizer::minimizeToFile($strFile, $strCode)
+	 */
+	public function minimizeToFile($strFile, $strCode)
+	{
+		// create temporary output file
+		$strTemp = $this->createTempFile();
+		$objFile = new File($strTemp);
+		$objFile->write($strCode);
+		if (!$this->minimize($strTemp, $strFile))
+		{
+			$objFile->delete();
+			return false;
+		}
+		$objFile->delete();
+		return true;
 	}
 	
 	
