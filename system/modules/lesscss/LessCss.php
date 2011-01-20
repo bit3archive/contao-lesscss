@@ -46,7 +46,8 @@ class LessCss extends AbstractMinimizer
 		parent::__construct();
 		$this->configure(array
 		(
-			'lessc' => '/var/lib/gems/1.8/bin/lessc'
+			'lessc' => '/var/lib/gems/1.8/bin/lessc',
+			'remove-charset' => true
 		));
 		$this->import('CssUrlRemapper');
 	}
@@ -72,18 +73,30 @@ class LessCss extends AbstractMinimizer
 		// QUICK FIX start
 		// https://less.tenderapp.com/discussions/problems/8-charset-error
 		// remove if version 2 released
-		$objSource = new File($strSource);
-		$strCode = $objSource->getContent();
-		$objSource->close();
-		
-		$strTemp = $this->createTempFile();
-		
-		$strCode = preg_replace('#@charset.*;#iU', '', $strCode);
-		$this->CssUrlRemapper->remapToFile($strCode, $strSource, $strTemp);
-		
-		$strSource = $strTemp;
+		if ($this->arrConfig['remove-charset'])
+		{
+			$objSource = new File($strSource);
+			$strCode = $objSource->getContent();
+			$objSource->close();
+			
+			$strTemp = $this->createTempFile();
+			$objFile = new File($strTemp);
+			
+			$strCode = preg_replace('#@charset.*;#iU', '', $strCode);
+			$this->CssUrlRemapper->remapToFile($strCode, $strSource, $strTemp);
+			
+			$blnResult = $this->_minimize($strTemp, $strTarget);
+			$objFile->delete();
+			return $blnResult;
+		}
 		// QUICK FIX end
 		
+		return $this->_minimize($strSource, $strTarget);
+	}
+	
+	
+	private function _minimize($strSource, $strTarget)
+	{
 		$strCmd  = escapeshellcmd($this->arrConfig['lessc']);
 		$strCmd .= ' ' . escapeshellarg(TL_ROOT . '/' . $strSource);
 		$strCmd .= ' ' . escapeshellarg(TL_ROOT . '/' . $strTarget);
@@ -128,18 +141,30 @@ class LessCss extends AbstractMinimizer
 		// QUICK FIX start
 		// https://less.tenderapp.com/discussions/problems/8-charset-error
 		// remove if version 2 released
-		$objFile = new File($strFile);
-		$strCode = $objFile->getContent();
-		$objFile->close();
-		
-		$strTemp = $this->createTempFile();
-		
-		$strCode = preg_replace('#@charset.*;#iU', '', $strCode);
-		$this->CssUrlRemapper->remapToFile($strCode, $strFile, $strTemp);
-		
-		$strFile = $strTemp;
+		if ($this->arrConfig['remove-charset'])
+		{
+			$objFile = new File($strFile);
+			$strCode = $objFile->getContent();
+			$objFile->close();
+			
+			$strTemp = $this->createTempFile();
+			$objFile = new File($strTemp);
+			
+			$strCode = preg_replace('#@charset.*;#iU', '', $strCode);
+			$this->CssUrlRemapper->remapToFile($strCode, $strFile, $strTemp);
+
+			$varResult = $this->_minimizeFromFile($strTemp);
+			$objFile->delete();
+			return $varResult;
+		}
 		// QUICK FIX end
 		
+		return $this->_minimizeFromFile($strFile);
+	}
+	
+	
+	private function _minimizeFromFile($strFile)
+	{
 		// create temporary output file
 		$strTemp = $this->createTempFile();
 		$objFile = new File($strTemp);
@@ -167,9 +192,18 @@ class LessCss extends AbstractMinimizer
 	{
 		// QUICK FIX start
 		// https://less.tenderapp.com/discussions/problems/8-charset-error
-		$strCode = preg_replace('#@charset.*;#iU', '', $strCode);
+		if ($this->arrConfig['remove-charset'])
+		{
+			$strCode = preg_replace('#@charset.*;#iU', '', $strCode);
+		}
 		// QUICK FIX end
 		
+		return $this->_minimizeToFile($strFile, $strCode);
+	}
+	
+	
+	private function _minimizeToFile($strFile, $strCode)
+	{
 		// create temporary output file
 		$strTemp = $this->createTempFile();
 		$objFile = new File($strTemp);
@@ -190,6 +224,14 @@ class LessCss extends AbstractMinimizer
 	 */
 	public function minimizeCode($strCode)
 	{
+		// QUICK FIX start
+		// https://less.tenderapp.com/discussions/problems/8-charset-error
+		if ($this->arrConfig['remove-charset'])
+		{
+			$strCode = preg_replace('#@charset.*;#iU', '', $strCode);
+		}
+		// QUICK FIX end
+		
 		// create temporary input file
 		$strTemp = $this->createTempFile();
 		// write source
@@ -197,7 +239,7 @@ class LessCss extends AbstractMinimizer
 		$objFile->write($strCode);
 		$objFile->close();
 		// minimize
-		$strCode = $this->minimizeFromFile(substr($strTemp, strlen(TL_ROOT)+1));
+		$strCode = $this->_minimizeFromFile(substr($strTemp, strlen(TL_ROOT)+1));
 		// delete temporary file
 		$objFile->delete();
 		// return code
