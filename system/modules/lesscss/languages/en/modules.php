@@ -31,6 +31,6 @@
 /**
  * Back end modules
  */
-$GLOBALS['TL_LANG']['MOD']['minimizer-lesscss'] = array('Compression API - {less}', '{less} CSS compiler and minimizer.');
+$GLOBALS['TL_LANG']['MOD']['lesscss'] = array('{less} CSS compiler and minimizer', '{less} CSS compiler and minimizer.');
 
 ?>
