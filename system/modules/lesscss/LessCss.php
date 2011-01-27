@@ -46,8 +46,8 @@ class LessCss extends AbstractMinimizer
 		parent::__construct();
 		$this->configure(array
 		(
-			'lessc' => '/var/lib/gems/1.8/bin/lessc',
-			'remove-charset' => true
+			'lessc' => TL_ROOT . '/system/modules/lesscss/bin/lessc',
+			'compress' => true
 		));
 		$this->import('CssUrlRemapper');
 	}
@@ -70,34 +70,11 @@ class LessCss extends AbstractMinimizer
 	 */
 	public function minimize($strSource, $strTarget)
 	{
-		// QUICK FIX start
-		// https://less.tenderapp.com/discussions/problems/8-charset-error
-		// remove if version 2 released
-		if ($this->arrConfig['remove-charset'])
+		$strCmd = escapeshellcmd($this->arrConfig['lessc']);
+		if ($this->arrConfig['compress'])
 		{
-			$objSource = new File($strSource);
-			$strCode = $objSource->getContent();
-			$objSource->close();
-			
-			$strTemp = $this->createTempFile();
-			$objFile = new File($strTemp);
-			
-			$strCode = preg_replace('#@charset.*;#iU', '', $strCode);
-			$this->CssUrlRemapper->remapToFile($strCode, $strSource, $strTemp);
-			
-			$blnResult = $this->_minimize($strTemp, $strTarget);
-			$objFile->delete();
-			return $blnResult;
+			$strCmd .= ' --compress';
 		}
-		// QUICK FIX end
-		
-		return $this->_minimize($strSource, $strTarget);
-	}
-	
-	
-	private function _minimize($strSource, $strTarget)
-	{
-		$strCmd  = escapeshellcmd($this->arrConfig['lessc']);
 		$strCmd .= ' ' . escapeshellarg(TL_ROOT . '/' . $strSource);
 		$strCmd .= ' ' . escapeshellarg(TL_ROOT . '/' . $strTarget);
 		// execute lessc
@@ -138,33 +115,6 @@ class LessCss extends AbstractMinimizer
 	 */
 	public function minimizeFromFile($strFile)
 	{
-		// QUICK FIX start
-		// https://less.tenderapp.com/discussions/problems/8-charset-error
-		// remove if version 2 released
-		if ($this->arrConfig['remove-charset'])
-		{
-			$objFile = new File($strFile);
-			$strCode = $objFile->getContent();
-			$objFile->close();
-			
-			$strTemp = $this->createTempFile();
-			$objFile = new File($strTemp);
-			
-			$strCode = preg_replace('#@charset.*;#iU', '', $strCode);
-			$this->CssUrlRemapper->remapToFile($strCode, $strFile, $strTemp);
-
-			$varResult = $this->_minimizeFromFile($strTemp);
-			$objFile->delete();
-			return $varResult;
-		}
-		// QUICK FIX end
-		
-		return $this->_minimizeFromFile($strFile);
-	}
-	
-	
-	private function _minimizeFromFile($strFile)
-	{
 		// create temporary output file
 		$strTemp = $this->createTempFile();
 		$objFile = new File($strTemp);
@@ -190,20 +140,6 @@ class LessCss extends AbstractMinimizer
 	 */
 	public function minimizeToFile($strFile, $strCode)
 	{
-		// QUICK FIX start
-		// https://less.tenderapp.com/discussions/problems/8-charset-error
-		if ($this->arrConfig['remove-charset'])
-		{
-			$strCode = preg_replace('#@charset.*;#iU', '', $strCode);
-		}
-		// QUICK FIX end
-		
-		return $this->_minimizeToFile($strFile, $strCode);
-	}
-	
-	
-	private function _minimizeToFile($strFile, $strCode)
-	{
 		// create temporary output file
 		$strTemp = $this->createTempFile();
 		$objFile = new File($strTemp);
@@ -224,14 +160,6 @@ class LessCss extends AbstractMinimizer
 	 */
 	public function minimizeCode($strCode)
 	{
-		// QUICK FIX start
-		// https://less.tenderapp.com/discussions/problems/8-charset-error
-		if ($this->arrConfig['remove-charset'])
-		{
-			$strCode = preg_replace('#@charset.*;#iU', '', $strCode);
-		}
-		// QUICK FIX end
-		
 		// create temporary input file
 		$strTemp = $this->createTempFile();
 		// write source
@@ -239,7 +167,7 @@ class LessCss extends AbstractMinimizer
 		$objFile->write($strCode);
 		$objFile->close();
 		// minimize
-		$strCode = $this->_minimizeFromFile(substr($strTemp, strlen(TL_ROOT)+1));
+		$strCode = $this->minimizeFromFile(substr($strTemp, strlen(TL_ROOT)+1));
 		// delete temporary file
 		$objFile->delete();
 		// return code
