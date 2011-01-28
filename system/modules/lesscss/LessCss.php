@@ -70,7 +70,7 @@ class LessCss extends AbstractMinimizer
 	 */
 	public function minimize($strSource, $strTarget)
 	{
-		$strCmd = escapeshellcmd($this->arrConfig['lessc']);
+		$strCmd  = '/usr/bin/env node ' . escapeshellarg($this->arrConfig['lessc']);
 		if ($this->arrConfig['compress'])
 		{
 			$strCmd .= ' --compress';
